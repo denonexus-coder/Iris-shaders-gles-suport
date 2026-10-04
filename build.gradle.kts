@@ -9,13 +9,13 @@ val NEOFORGE_VERSION by extra { "21.11.5-beta" }
 val FABRIC_LOADER_VERSION by extra { "0.18.1" }
 val FABRIC_API_VERSION by extra { "0.140.2+1.21.11" }
 
-val SODIUM_DEPENDENCY_FABRIC by extra { files(rootDir.resolve("custom_sodium/sodium-fabric-0.8.14+mc1.21.11.jar")) }
-val SODIUM_DEPENDENCY_NEO by extra {
-    files(
-        rootDir.resolve("custom_sodium/net.caffeinemc.sodium-neoforge-0.8.14+mc1.21.11-mod.jar"),
-        rootDir.resolve("custom_sodium/sodium-neoforge-0.8.14+mc1.21.11.jar")
-    )
-}
+// Sodium must be a Maven coordinate, not files("custom_sodium/..."):
+// Loom's mod remapping (modImplementation) does not pick up local FileCollection
+// dependencies, so the classes never reach the compile classpath and every
+// net.caffeinemc.mods.sodium.* import fails with "package ... does not exist".
+// All subprojects already declare https://api.modrinth.com/maven (maven.modrinth).
+val SODIUM_DEPENDENCY_FABRIC by extra { "maven.modrinth:sodium:mc1.21.11-0.8.14-fabric" }
+val SODIUM_DEPENDENCY_NEO by extra { "maven.modrinth:sodium:mc1.21.11-0.8.14-neoforge" }
 
 // This value can be set to null to disable Parchment.
 // TODO: Re-add Parchment
