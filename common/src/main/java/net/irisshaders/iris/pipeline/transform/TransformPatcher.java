@@ -168,11 +168,16 @@ public class TransformPatcher {
 								CompatibilityTransformer.transformFragmentCore(transformer, tree, root, parameters);
 							}
 						} else {
-							// patch the version number to at least 330
-							if (version.number < 330) {
-								versionStatement.version = Version.GLSL33;
+							// Preserve ESSL profile if it exists
+							if (versionStatement.profile != null && versionStatement.profile.name().equals("ES")) {
+								// Do not override version and profile for ESSL
+							} else {
+								// patch the version number to at least 330
+								if (version.number < 330) {
+									versionStatement.version = Version.GLSL33;
+								}
+								versionStatement.profile = Profile.CORE;
 							}
-							versionStatement.profile = Profile.CORE;
 
 							switch (parameters.patch) {
 								case COMPOSITE:
