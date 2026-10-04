@@ -1,34 +1,51 @@
 # This workflow will build a Java project with Gradle
-    # For more information see: docts/development/brachyura.md
+# For more information see: docts/development/brachyura.md
 
-    name: Java CI with Gradle
+name: Java CI with Gradle
 
-    on: [push, pull_request]
+on: [push, pull_request]
 
-    jobs:
-      build:
-        runs-on: ubuntu-latest
-        steps:
-          - name: Checkout sources
-            uses: actions/checkout@v4
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
 
-          - name: Setup Java
-            uses: actions/setup-java@v4
-            with:
-              distribution: 'temurin'
-              java-version: 21
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 21
 
-          - name: Setup Gradle
-            uses: gradle/actions/setup-gradle@v4
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
-          - name: Build with Gradle
-            run: ./gradlew build
+      # build.gradle.kts resolves Sodium via files("custom_sodium/...jar"), which is
+      # gitignored (see .gitignore). CI does a clean checkout, so Loom's Checksum pass
+      # over :common's dependencies throws NoSuchFileException ->
+      # "Failed to setup Minecraft, UncheckedIOException: Failed to compute checksum".
+      - name: Fetch local Sodium dependency
+        run: |
+          set -euo pipefail
+          mkdir -p custom_sodium
+          JAR="custom_sodium/sodium-fabric-0.8.14+mc1.21.11.jar"
+          curl -fsSL --retry 3 --retry-delay 2 \
+            --connect-timeout 20 --max-time 180 \
+            -A "Iris-shaders-gles-suport/CI" \
+            -o "$JAR" \
+            "https://cdn.modrinth.com/data/AANobbMI/versions/rkdTcxoT/sodium-fabric-0.8.14%2Bmc1.21.11.jar"
+          echo "fd2619eff5da6b9ba6304b8b72ac3fe132c30e0bd5d675e4581eda417a272f5d  $JAR" | sha256sum -c -
+          unzip -tq "$JAR" > /dev/null && echo "jar OK ($(stat -c%s "$JAR") bytes)"
 
-          - name: Upload built JAR
-            uses: actions/upload-artifact@v4
-            with:
-              name: iris-artifacts
-              path: |
-                build/libs/
-                fabric/build/libs/
-                neoforge/build/libs/
+      - name: Build with Gradle
+        run: ./gradlew build --stacktrace
+
+      - name: Upload built JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: iris-artifacts
+          path: |
+            build/libs/
+            fabric/build/libs/
+            neoforge/build/libs/
