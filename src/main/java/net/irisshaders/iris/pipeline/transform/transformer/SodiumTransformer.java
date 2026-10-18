@@ -173,19 +173,19 @@ public class SodiumTransformer {
 				"    return ((material >> MATERIAL_USE_MIP_OFFSET) & 1u) != 0u ? 0.0f : -4.0f;\n" +
 				"}",
 			"void _vert_init() {" +
-				"_vert_position = (_deinterleave_u20x3(a_Position) * VERTEX_SCALE) + VERTEX_OFFSET;" +
+				"_vert_position = (vec3(_deinterleave_u20x3(a_Position)) * VERTEX_SCALE) + VERTEX_OFFSET;" +
 				"_vert_tex_diffuse_coord = _get_texcoord();" +
 				"_vert_tex_diffuse_coord_bias = _get_texcoord_bias();" +
 				"_vert_tex_light_coord = vec2(a_LightAndData.xy);" +
 				"_vert_color = " + separateAo + ";" +
-				"_draw_id = a_LightAndData[3]; }",
+				"_draw_id = uint(a_LightAndData[3]); }",
 
 			"uvec3 _get_relative_chunk_coord(uint pos) {\n" +
 				"    // Packing scheme is defined by LocalSectionIndex\n" +
 				"    return uvec3(pos) >> uvec3(5u, 0u, 2u) & uvec3(7u, 3u, 7u);\n" +
 				"}",
 			"vec3 _get_draw_translation(uint pos) {\n" +
-				"    return _get_relative_chunk_coord(pos) * vec3(16.0f);\n" +
+				"    return vec3(_get_relative_chunk_coord(pos)) * vec3(16.0f);\n" +
 				"}\n");
 		addIfNotExists(root, t, tree, "a_Position", Type.U32VEC2, StorageQualifier.StorageType.IN);
 		addIfNotExists(root, t, tree, "a_TexCoord", Type.U32VEC2, StorageQualifier.StorageType.IN);
@@ -223,23 +223,40 @@ public class SodiumTransformer {
 
 		root.replaceReferenceExpressions(t, "mc_midTexCoord", "iris_MidTex");
 
+		String midTexType;
+		String midTexExpression;
 		switch (dimension) {
 			case BOOL:
 				return;
 			case FLOAT32:
-				tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS, "float iris_MidTex = (mc_midTexCoord.x * " + textureScale + ").x;");
+				midTexType = "float";
+				midTexExpression = "(mc_midTexCoord.x * " + textureScale + ").x";
 				break;
 			case F32VEC2:
-				tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS, "vec2 iris_MidTex = (mc_midTexCoord.xy * " + textureScale + ").xy;");
+				midTexType = "vec2";
+				midTexExpression = "(mc_midTexCoord.xy * " + textureScale + ").xy";
 				break;
 			case F32VEC3:
-				tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS, "vec3 iris_MidTex = vec3(mc_midTexCoord.xy * " + textureScale + ", 0.0);");
+				midTexType = "vec3";
+				midTexExpression = "vec3(mc_midTexCoord.xy * " + textureScale + ", 0.0)";
 				break;
 			case F32VEC4:
-				tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS, "vec4 iris_MidTex = vec4(mc_midTexCoord.xy * " + textureScale + ", 0.0, 1.0);");
+				midTexType = "vec4";
+				midTexExpression = "vec4(mc_midTexCoord.xy * " + textureScale + ", 0.0, 1.0)";
 				break;
 			default:
 				throw new IllegalStateException("Somehow got a midTexCoord that is *above* 4 dimensions???");
+		}
+
+		// GLSL ES forbids non-constant initializers on global variables (this one
+		// reads a vertex input), so for ESSL the assignment is moved into main.
+		boolean essl = CommonTransformer.isEssl(tree);
+		tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
+			essl
+				? midTexType + " iris_MidTex;"
+				: midTexType + " iris_MidTex = " + midTexExpression + ";");
+		if (essl) {
+			tree.prependMainFunctionBody(t, "iris_MidTex = " + midTexExpression + ";");
 		}
 
 		tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS, "in vec2 mc_midTexCoord;");

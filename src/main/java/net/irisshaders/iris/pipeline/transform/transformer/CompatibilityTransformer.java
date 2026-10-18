@@ -74,7 +74,7 @@ public class CompatibilityTransformer {
 	private static final Template<Statement> statementTemplate = Template
 		.withStatement("__oldDecl = vec3(__internalDecl);");
 	private static final Template<Statement> statementTemplateVector = Template
-		.withStatement("__oldDecl = vec3(__internalDecl, vec4(0));");
+		.withStatement("__oldDecl = vec3(__internalDecl, vec4(0.0));");
 	private static final Matcher<ExternalDeclaration> nonLayoutOutDeclarationMatcher = new Matcher<>(
 		"out float name;",
 		ParseShape.EXTERNAL_DECLARATION) {

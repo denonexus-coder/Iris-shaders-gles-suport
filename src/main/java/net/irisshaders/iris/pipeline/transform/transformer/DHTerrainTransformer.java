@@ -114,7 +114,7 @@ public class DHTerrainTransformer {
 			"vec3 _vert_normal;",
 			"uniform float mircoOffset;",
 			"uniform vec3 modelOffset;",
-			"const vec3 irisNormals[6] = vec3[](vec3(0,-1,0),vec3(0,1,0),vec3(0,0,-1),vec3(0,0,1),vec3(-1,0,0),vec3(1,0,0));",
+			"const vec3 irisNormals[6] = vec3[](vec3(0.0,-1.0,0.0),vec3(0.0,1.0,0.0),vec3(0.0,0.0,-1.0),vec3(0.0,0.0,1.0),vec3(-1.0,0.0,0.0),vec3(1.0,0.0,0.0));",
 			"void _vert_init() {" +
 				"    uint meta = vPosition.a;\n" +
 				"uint mirco = (meta & 0xFF00u) >> 8u; // mirco offset which is a xyz 2bit value\n" +
@@ -129,7 +129,7 @@ public class DHTerrainTransformer {
 				"    float mz = (mirco & 16u)!=0u ? mircoOffset : 0.0;\n" +
 				"    mz = (mirco & 32u)!=0u ? -mz : mz;\n" +
 				"        uint lights = meta & 0xFFu;\n" +
-				"_vert_position = (vPosition.xyz + vec3(mx, 0, mz));" +
+				"_vert_position = (vec3(vPosition.xyz) + vec3(mx, 0.0, mz));" +
 				"_vert_normal = irisNormals[irisExtra.y];" +
 				"dhMaterialId = int(irisExtra.x);" +
 				"_vert_tex_light_coord = vec2((float(lights/16u)+0.5) / 16.0, (mod(float(lights), 16.0)+0.5) / 16.0);" +

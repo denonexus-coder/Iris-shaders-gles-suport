@@ -118,10 +118,10 @@ public class DHGenericTransformer {
 			"uniform vec3 uCameraPosSubChunk;",
 			"uniform int uSkyLight;",
 			"uniform int uBlockLight;",
-			"const vec3 irisNormals[6] = vec3[](vec3(0,0,-1),vec3(0,0,1),vec3(-1,0,0),vec3(1,0,0),vec3(0,-1,0),vec3(0,1,0));",
+			"const vec3 irisNormals[6] = vec3[](vec3(0.0,0.0,-1.0),vec3(0.0,0.0,1.0),vec3(-1.0,0.0,0.0),vec3(1.0,0.0,0.0),vec3(0.0,-1.0,0.0),vec3(0.0,1.0,0.0));",
 			"""
 				void _vert_init() {
-					vec3 trans = (aTranslateChunk + uOffsetChunk - uCameraPosChunk) * 16.0f;
+					vec3 trans = vec3(aTranslateChunk + uOffsetChunk - uCameraPosChunk) * 16.0f;
 					trans += (aTranslateSubChunk + uOffsetSubChunk - uCameraPosSubChunk);
 					mat4 transform = mat4(
 				         aScale.x, 0.0,      0.0,      0.0,
@@ -130,7 +130,7 @@ public class DHGenericTransformer {
 				         trans.x,  trans.y,  trans.z,  1.0
 				     );
 				     _vert_position = (transform * vec4(vPosition, 1.0)).xyz;
-					_vert_normal = irisNormals[int(floor(float(gl_VertexID) / 4))];
+					_vert_normal = irisNormals[int(floor(float(gl_VertexID) / 4.0))];
 								float blockLight = (float(uBlockLight)+0.5) / 16.0;
 								float skyLight = (float(uSkyLight)+0.5) / 16.0;
 				     _vert_tex_light_coord = vec2(blockLight, skyLight);

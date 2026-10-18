@@ -1,7 +1,9 @@
 package net.irisshaders.iris.pipeline.transform.transformer;
 
 import io.github.douira.glsl_transformer.ast.node.Identifier;
+import io.github.douira.glsl_transformer.ast.node.Profile;
 import io.github.douira.glsl_transformer.ast.node.TranslationUnit;
+import io.github.douira.glsl_transformer.ast.node.VersionStatement;
 import io.github.douira.glsl_transformer.ast.node.declaration.DeclarationMember;
 import io.github.douira.glsl_transformer.ast.node.declaration.TypeAndInitDeclaration;
 import io.github.douira.glsl_transformer.ast.node.expression.Expression;
@@ -129,7 +131,7 @@ public class CommonTransformer {
 			// the correct conversion from mc_midTexCoord's declared type to vec4.
 			root.rename("gl_MultiTexCoord3", "mc_midTexCoord");
 			tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
-				"attribute vec4 mc_midTexCoord;");
+				"in vec4 mc_midTexCoord;");
 		}
 	}
 
@@ -147,6 +149,17 @@ public class CommonTransformer {
 					: StorageType.IN;
 			}
 		}
+	}
+
+	/**
+	 * Whether the shader is written in GLSL ES (ESSL). Iris passes ESSL shaders
+	 * through with their profile intact so that they can be compiled directly by
+	 * the ES driver (the "direct shader" path used by GLES translation layers such
+	 * as MobileGlues), instead of being re-patched into a desktop core profile.
+	 */
+	public static boolean isEssl(TranslationUnit tree) {
+		VersionStatement versionStatement = tree.getVersionStatement();
+		return versionStatement != null && versionStatement.profile == Profile.ES;
 	}
 
 	public static void transform(
@@ -271,6 +284,9 @@ public class CommonTransformer {
 		// passes. A shader that relies on this behavior is SEUS v11 - it reads
 		// gl_Fog.color and breaks if it is not properly defined.
 		root.rename("gl_Fog", "iris_Fog");
+		// GLSL ES forbids non-constant initializers on global variables, so when the
+		// shader is ESSL the initializer is moved into the start of main instead.
+		String irisFogInitializer = "iris_Fog = iris_FogParameters(iris_FogColor, iris_FogDensity, iris_FogStart, iris_FogEnd, 1.0 / (iris_FogEnd - iris_FogStart));";
 		tree.parseAndInjectNodes(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
 			"uniform float iris_FogDensity;",
 			"uniform float iris_FogStart;",
@@ -283,7 +299,12 @@ public class CommonTransformer {
 				"float end;" +
 				"float scale;" +
 				"};",
-			"iris_FogParameters iris_Fog = iris_FogParameters(iris_FogColor, iris_FogDensity, iris_FogStart, iris_FogEnd, 1.0 / (iris_FogEnd - iris_FogStart));");
+			isEssl(tree)
+				? "iris_FogParameters iris_Fog;"
+				: "iris_FogParameters iris_Fog = iris_FogParameters(iris_FogColor, iris_FogDensity, iris_FogStart, iris_FogEnd, 1.0 / (iris_FogEnd - iris_FogStart));");
+		if (isEssl(tree)) {
+			tree.prependMainFunctionBody(t, irisFogInitializer);
+		}
 
 		// TODO: Add similar functions for all legacy texture sampling functions
 		renameFunctionCall(root, "texture2D", "texture");
