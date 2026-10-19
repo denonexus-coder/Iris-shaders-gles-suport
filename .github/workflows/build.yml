@@ -23,7 +23,9 @@ jobs:
           cache-read-only: false
 
       - name: Run build with Gradle Wrapper
-        run: ./gradlew build
+        # -Dbuild.release=true => version "1.7.6+mc1.20.1" (sem sufixo -snapshot,
+        # que seria < 1.7.6 em semver e faria o Sodium rejeitar via breaks:"iris":"<1.7.6")
+        run: ./gradlew build -Dbuild.release=true
 
       - name: Upload built JAR (Fabric)
         uses: actions/upload-artifact@v4
