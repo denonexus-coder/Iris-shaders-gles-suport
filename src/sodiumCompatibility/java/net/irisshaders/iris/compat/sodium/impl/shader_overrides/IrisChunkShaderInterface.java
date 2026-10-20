@@ -78,7 +78,7 @@ public class IrisChunkShaderInterface extends ChunkShaderInterface {
 			public GlUniformBlock bindUniformBlock(String s, int i) {
 				return contextExt.bindUniformBlockIfPresent(s, i);
 			}
-		}, options);
+		}, options, false);
 		this.uniformModelViewMatrix = contextExt.bindUniformIfPresent("iris_ModelViewMatrix", GlUniformMatrix4f::new);
 		this.uniformTexCoordShrink = contextExt.bindUniformIfPresent("u_TexCoordShrink", GlUniformFloat2v::new);
 		this.uniformModelViewMatrixInverse = contextExt.bindUniformIfPresent("iris_ModelViewMatrixInverse", GlUniformMatrix4f::new);

@@ -14,8 +14,8 @@ object Constants {
     // https://semver.org/
     const val MOD_VERSION: String = "1.7.6"
 
-    const val CUSTOM_SODIUM: Boolean = false
-    const val CUSTOM_SODIUM_NAME: String = "sodium-fabric-0.5.12-snapshot+mc1.20.1-build.612.jar"
+    const val CUSTOM_SODIUM: Boolean = true
+    const val CUSTOM_SODIUM_NAME: String = "sodium-fabric-0.5.13+mc1.20.1.jar"
 
     const val IS_SHARED_BETA: Boolean = false
     const val ACTIVATE_RENDERDOC: Boolean = true
@@ -165,7 +165,16 @@ dependencies {
     modImplementation("org.anarres:jcpp:1.4.14")
 
     if (Constants.CUSTOM_SODIUM) {
-        modImplementation(files(projectDir.resolve("custom_sodium").resolve(Constants.CUSTOM_SODIUM_NAME)))
+        val customSodiumFile = projectDir.resolve("custom_sodium").resolve(Constants.CUSTOM_SODIUM_NAME)
+
+        if (!customSodiumFile.exists()) {
+            throw GradleException(
+                "Missing ${customSodiumFile.path}. Build denonexus-coder/sodium 1.20.1/dev with " +
+                    "-Pbuild.release=true and copy the jar into custom_sodium/."
+            )
+        }
+
+        modImplementation(files(customSodiumFile))
     } else {
         modImplementation("maven.modrinth", "sodium", Constants.SODIUM_VERSION)
     }

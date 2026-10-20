@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - uses: actions/setup-java@v4
         with:
@@ -21,6 +21,24 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           cache-read-only: false
+
+      # Iris now compiles against the Sodium fork's colored-lighting API, which is not
+      # published to Modrinth. Build the fork and stage its release jar for the Iris build.
+      - name: Checkout custom Sodium
+        uses: actions/checkout@v4
+        with:
+          repository: denonexus-coder/sodium
+          ref: 1.20.1/dev
+          path: sodium
+
+      - name: Build custom Sodium
+        working-directory: sodium
+        run: ./gradlew build -Pbuild.release=true --no-daemon
+
+      - name: Stage custom Sodium
+        run: |
+          mkdir -p custom_sodium
+          cp sodium/build/libs/sodium-fabric-0.5.13+mc1.20.1.jar custom_sodium/
 
       - name: Run build with Gradle Wrapper
         # -Dbuild.release=true => version "1.7.6+mc1.20.1" (sem sufixo -snapshot,
