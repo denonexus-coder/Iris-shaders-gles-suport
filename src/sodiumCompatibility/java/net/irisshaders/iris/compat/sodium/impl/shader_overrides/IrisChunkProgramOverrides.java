@@ -256,7 +256,11 @@ public class IrisChunkProgramOverrides {
 					int handle = ((GlObject) shader).handle();
 					ShaderBindingContextExt contextExt = (ShaderBindingContextExt) shader;
 					GLDebug.nameObject(GL43C.GL_PROGRAM, handle, "sodium-terrain-" + pass.toString().toLowerCase(Locale.ROOT));
-					return new IrisChunkShaderInterface(handle, contextExt, pipeline, new ChunkShaderOptions(ChunkFogMode.SMOOTH, pass.toTerrainPass(), vertexType),
+					// surfaceReflection and makeupProfile are Sodium-only shader features: the
+					// reflection path is forced off whenever Iris is loaded (see ShaderChunkRenderer)
+					// and the MakeUp profile would skip the u_LightTex binding that this pack-driven
+					// program still needs, so both stay disabled here.
+					return new IrisChunkShaderInterface(handle, contextExt, pipeline, new ChunkShaderOptions(ChunkFogMode.SMOOTH, pass.toTerrainPass(), vertexType, false, false),
 						tessCShader != null || tessEShader != null, pass == IrisTerrainPass.SHADOW || pass == IrisTerrainPass.SHADOW_CUTOUT, blendOverride, bufferOverrides, alpha, pipeline.getCustomUniforms());
 				});
 		} finally {
